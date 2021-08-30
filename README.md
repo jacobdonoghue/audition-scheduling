@@ -13,7 +13,7 @@ This program relies on:
 1. Python v3.8+
 2. [xlsxwriter](https://xlsxwriter.readthedocs.io/) to write to excel
 3. [pandas](https://pandas.pydata.org/) to read from excel
-4. decouple library to access .env environment variables
+4. [decouple] (https://pypi.org/project/python-decouple/) to access .env environment variables
 
 ## Before running
 
