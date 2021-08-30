@@ -1,0 +1,5 @@
+Aires:Dartmouth Hall 101
+Brovertones:Dartmouth Hall 102
+Cords:Dartmouth Hall 103
+Dodecaphonics:Dartmouth Hall 104
+Sings:Dartmouth Hall 105
