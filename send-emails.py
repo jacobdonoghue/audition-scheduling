@@ -6,22 +6,7 @@ from email.mime.text import MIMEText
 import os
 import shutil
 import pandas as pd
-
-def readStudentTimes2():
-    f = open("auditions-times/student-times.txt", "r")
-    lines = f.readlines()
-    f.close()
-
-    emailTimes = {}
-    for line in lines:
-        arr = line.replace("\n", "").split("/")
-        email = arr[0]
-        res = []
-        for i in range(1, len(arr)):
-            subArr = arr[i].split("-")
-            res.append(subArr)
-        emailTimes[email] = res
-    return emailTimes
+from decouple import config
 
 def readStudentTimes():
     print('readingStudentTimes2')
@@ -83,7 +68,7 @@ def buildMessage(studentTimes, locations):
     for subArr in studentTimes:
         message += subArr[0]+": "+subArr[1]+" at "+locations[subArr[0]]+"\n"
     
-    message += "\n Please warm up beforehand, and show up 5 minutes early \n\n If, for any reason, you can't make these times, please respond to this email and we'll find a different time to fit you in. \n\n Much love, \n\n   the Dartmouth Acapella Groups :)"
+    message += "\n Please warm up beforehand, and show up 5 minutes early to your first slot\n\n If, for any reason, you can't make these times, please respond to this email and we'll find a different time to fit you in. \n\n Much love, \n\n   the Dartmouth Acapella Groups :)"
     # print('message', message)
     return message
 
@@ -96,8 +81,8 @@ def main(send):
         # log in
         smtp_server = "smtp.gmail.com"
         port = 587  # For starttls
-        sender_email = "acapella.auditions2021@gmail.com"
-        password = "acapella2021!"
+        sender_email = config('EMAIL')
+        password = config('PASSWORD')
         # Create a secure SSL context
         context = ssl.create_default_context()
 
@@ -113,18 +98,17 @@ def main(send):
             # send email to each student
             i = 0
             for studEmail in emailTimes.keys():
-                # print(studEmail, ':', emailTimes[studEmail])
                 message = MIMEMultipart()
                 message["From"] = sender_email
-                message["To"] = 'jacobdonoghue61@gmail.com' # <-- dummy --> real value is studEmail
+                message["To"] = studEmail # replace with your email for testing purposes
                 message["Subject"] = "Acapella Audition Times!!!"
                 body = buildMessage(emailTimes[studEmail], locations)
                 message.attach(MIMEText(body, "plain"))
                 text = message.as_string()
                 if (send):
-                    server.sendmail(sender_email, emails[0], text)
+                    server.sendmail(sender_email, studEmail, text)
                 else:
-                    # print('sending email '+str(i)+": \n", body)
+                    print('sending email '+str(i)+": \n", body)
                     k = 0
                 i += 1
         except Exception as e:
