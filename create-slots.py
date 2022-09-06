@@ -7,7 +7,7 @@ import os
 import shutil
 import importlib.util
 import xlsxwriter
-
+import pandas as pd
 def generateTimeSlots(baseline, n, slotSize):
     numSlots = n
     while (not numSlots % slotSize == 0):
@@ -43,6 +43,7 @@ def getRealTimes(studentTimes, slots):
     # print(studentTimes)
     realTimes = []
     for subArr in studentTimes:
+        # print(subArr)
         arr = [subArr[0], slots[subArr[1]]]
         realTimes.append(arr)
     return realTimes
@@ -87,12 +88,12 @@ def writeToTxt(totalTimes, emailTimes):
 def writeToExcel(totalTimes, slots):
     # write to excel
     try:
-        os.remove('auditions-times.xlsx')
+        os.remove('auditions-times-girls.xlsx')
     except OSError as e:
         # do nothing
-        print('')
+        print('OSError:', e)
 
-    workbook = xlsxwriter.Workbook('auditions-times.xlsx')
+    workbook = xlsxwriter.Workbook('auditions-times-girls.xlsx')
     worksheet = workbook.add_worksheet()
     bold = workbook.add_format({'bold': 1})
     rowNum = 2
@@ -129,13 +130,53 @@ def initializeTotalTimes(groups):
         totalTimes[group] = []
     return totalTimes
 
-def main():
-    STUDENT_COUNT = 102
-    SLOT_SIZE = 5
+def validateEmails(emails):
+    errorFound = False
+    for email in emails:
+        # check for @dartmouth.edu
+        ending = "dartmouth.edu"
+        arr =  email.split("@")
+        if (len(arr) < 2 or arr[1] != "dartmouth.edu"):
+            print('FOUND INVALID EMAIL:', email)
+            errorFound = True 
+    return errorFound
 
+# genIdentity: 1 = man, 2 = woman, 3 = other
+def getEmails(genIdentity):
+    emails = []
+    df = pd.read_excel('auditions-emails.xlsx')
+    list_of_columns = df.columns.values
+
+    i = 1
+    for index, row in df.iterrows():
+        # print('row', row)
+        name = row[1]
+        identity = row[3]
+        email = row[5]
+        if ((identity == 'Man' and genIdentity == 1) or (identity == 'Woman' and genIdentity == 2) or (genIdentity == 3 and (identity == 'Woman' or identity == 'Man'))):
+            emails.append(email)
+        i += 1
+
+    # print('res', emails)
+    print('Read a total of', len(emails), 'emails')
+
+    errorFound = validateEmails(emails)
+    return [emails, errorFound]
+   
+def main():
+    SLOT_SIZE = 5
+    [input, errors] = getEmails(2)
+    if errors:
+        print('VALIDATION ERRORS FOUND: FIX IN EXCEL SHEET BEFORE PROCEEDING')
+        # return
+    else:
+        print('All emails passed validation!')
+    # STUDENT_COUNT = len(input)
+    STUDENT_COUNT = 30
     input = generateTestEmails(STUDENT_COUNT)
-    slots = generateTimeSlots('11:00am', STUDENT_COUNT, SLOT_SIZE)
-    groups = ['Aires', 'Brovertones', 'Cords', 'Dodecaphonics', 'Sings']
+    slots = generateTimeSlots('3:15pm', STUDENT_COUNT, SLOT_SIZE)
+    groups = ['Aires', 'Dodecaphonics', 'Cords', 'Brovertones', 'Sings']
+    # groups = ['Rockapellas', 'Sings', 'Decibelles', 'Dodecaphonics', 'Subtleties']
     totalTimes = initializeTotalTimes(groups)
     emailTimes = {} 
 
@@ -187,7 +228,8 @@ def main():
 
         for i in range(0, len(groups)):
             totalTimes[groups[i]].extend(times[i])
-
+    print('studentCount', STUDENT_COUNT)
+    print(totalTimes, slots)
     writeToExcel(totalTimes, slots)
 
 main()

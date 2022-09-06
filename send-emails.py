@@ -66,17 +66,48 @@ def validate(studentTimes):
 def buildMessage(studentTimes, locations):
     message = "Hello!\n We're so excited to hear you sing! Here are your audition times:\n\n"
     for subArr in studentTimes:
-        message += subArr[0]+": "+subArr[1]+" at "+locations[subArr[0]]+"\n"
+        message += subArr[0]+": "+subArr[1]+" at "+locations[subArr[0]]+" on Sunday, September 19th\n"
     
-    message += "\n Please warm up beforehand, and show up 5 minutes early to your first slot\n\n If, for any reason, you can't make these times, please respond to this email and we'll find a different time to fit you in. \n\n Much love, \n\n   the Dartmouth Acapella Groups :)"
+    message += "\n Please warm up beforehand, come ready to sing a verse and a chorus of any song of your choosing, and show up 5 minutes early to your first slot\n\n If, for any reason, you can't make these times, please respond to this email and we'll find a different time to fit you in. \n\n Much love, \n\n   the Dartmouth Acapella Groups :)"
     # print('message', message)
     return message
+
+def getEmails(genIdentity):
+    emails = []
+    df = pd.read_excel('auditions-emails.xlsx')
+    list_of_columns = df.columns.values
+
+    i = 1
+    for index, row in df.iterrows():
+        # print('row', row)
+        name = row[1]
+        identity = row[3]
+        email = row[5]
+        if ((identity == 'Man' and genIdentity == 1) or (identity == 'Woman' and genIdentity == 2) or (genIdentity == 3 and (identity == 'Woman' or identity == 'Man'))):
+            emails.append(email)
+        i += 1
+
+    print('res', emails)
+    print('total', len(emails))
+    return emails
+
+def compareEmails(e1, e2):
+    found = set()
+    lost = []
+    for email in e1:
+        found.add(email)
+    
+    for email in e2:
+        if email not in found:
+            lost.append(email)
+    
+    return lost
 
 def main(send):
     emailTimes = readStudentTimes()
     valid = validate(emailTimes)
+
     if (valid):
-        
         locations = readLocations()
         # log in
         smtp_server = "smtp.gmail.com"
@@ -97,6 +128,7 @@ def main(send):
 
             # send email to each student
             i = 0
+
             for studEmail in emailTimes.keys():
                 message = MIMEMultipart()
                 message["From"] = sender_email
@@ -107,10 +139,12 @@ def main(send):
                 text = message.as_string()
                 if (send):
                     server.sendmail(sender_email, studEmail, text)
+                    print('sending email ', i + 1, ' to ', studEmail)
                 else:
-                    print('sending email '+str(i)+": \n", body)
+                    # print('sending email '+str(i)+": \n", body)
                     k = 0
                 i += 1
+            print('sent', len(emailTimes), 'emails')
         except Exception as e:
             # Print any error messages to stdout
             error = e
@@ -123,5 +157,7 @@ def main(send):
             print('script exited with error', error)
     else:
         print('invalid data, cannot send out emails')
+    
+    print(compareEmails(emailTimes.keys(), getEmails(1)))
 
-main(False)
+main(True)
